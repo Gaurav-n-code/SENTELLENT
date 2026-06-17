@@ -10,12 +10,6 @@ terraform {
       version = "~> 3.5"
     }
   }
-
-  backend "s3" {
-    bucket = "sentellent-terraform-state"
-    key    = "infra/terraform.tfstate"
-    region = "us-east-1"
-  }
 }
 
 provider "aws" {

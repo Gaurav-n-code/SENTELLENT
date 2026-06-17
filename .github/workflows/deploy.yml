@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-south-1
   APP_NAME: sentellent
   ENVIRONMENT: prod
 
@@ -32,7 +32,11 @@ jobs:
 
       - name: Terraform Init
         working-directory: ./infra
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=sentellent-terraform-state" \
+            -backend-config="key=infra/terraform.tfstate" \
+            -backend-config="region=ap-south-1"
 
       - name: Terraform Plan
         working-directory: ./infra
