@@ -5,16 +5,12 @@ output "alb_dns" {
 
 output "backend_service_url" {
   description = "Backend service URL"
-  value = local.use_https
-    ? "https://${var.domain_name}/api/v1"
-    : "http://${aws_lb.main.dns_name}/api/v1"
+  value       = local.use_https ? "https://${var.domain_name}/api/v1" : "http://${aws_lb.main.dns_name}/api/v1"
 }
 
 output "frontend_url" {
   description = "Frontend URL"
-  value = local.use_https
-    ? "https://${var.domain_name}"
-    : "http://${aws_lb.main.dns_name}"
+  value       = local.use_https ? "https://${var.domain_name}" : "http://${aws_lb.main.dns_name}"
 }
 
 output "rds_endpoint" {
