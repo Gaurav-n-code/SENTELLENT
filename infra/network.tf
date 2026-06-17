@@ -16,11 +16,15 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
+locals {
+  azs = ["${var.aws_region}a", "${var.aws_region}b"]
+}
+
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.${count.index}.0/24"
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
   tags = {
@@ -32,15 +36,11 @@ resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.${count.index + 10}.0/24"
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  availability_zone = local.azs[count.index]
 
   tags = {
     Name = "${var.app_name}-${var.environment}-private-${count.index}"
   }
-}
-
-data "aws_availability_zones" "available" {
-  state = "available"
 }
 
 resource "aws_eip" "nat" {
