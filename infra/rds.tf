@@ -24,7 +24,7 @@ resource "aws_db_instance" "main" {
 
   backup_retention_period = 7
   backup_window          = "03:00-04:00"
-  maintenance_window     = "sun:04:00-05:00"
+  maintenance_window     = "sun:04:00-sun:05:00"
 
   skip_final_snapshot     = false
   final_snapshot_identifier = "${var.app_name}-${var.environment}-final"
