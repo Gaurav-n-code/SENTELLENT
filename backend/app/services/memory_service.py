@@ -60,16 +60,16 @@ User message: {message}
 EXPECTED_DIM = 768
 
 
-def _embed_text(text: str) -> Optional[List[float]]:
+async def _embed_text(text: str) -> Optional[List[float]]:
     for model in EMBEDDING_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/{model}:embedContent"
         try:
-            resp = httpx.post(
-                url,
-                params={"key": settings.GEMINI_API_KEY},
-                json={"model": model, "content": {"parts": [{"text": text}]}},
-                timeout=30,
-            )
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    url,
+                    params={"key": settings.GEMINI_API_KEY},
+                    json={"model": model, "content": {"parts": [{"text": text}]}},
+                )
             if resp.status_code == 200:
                 data = resp.json()
                 values = data["embedding"]["values"]
@@ -85,19 +85,19 @@ def _extract_keywords(message: str) -> List[str]:
     return [w for w in words if w not in STOP_WORDS and len(w) > 1]
 
 
-def _extract_memories_from_text(message: str) -> List[dict]:
+async def _extract_memories_from_text(message: str) -> List[dict]:
     prompt = _build_extraction_prompt(message)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.LLM_MODEL}:generateContent"
     try:
-        resp = httpx.post(
-            url,
-            params={"key": settings.GEMINI_API_KEY},
-            json={
-                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.1, "maxOutputTokens": 512},
-            },
-            timeout=30,
-        )
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                url,
+                params={"key": settings.GEMINI_API_KEY},
+                json={
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 512},
+                },
+            )
         if resp.status_code != 200:
             return []
         data = resp.json()
@@ -119,7 +119,7 @@ async def extract_and_store_memories(
     if user_id is None:
         return []
 
-    extracted = _extract_memories_from_text(message)
+    extracted = await _extract_memories_from_text(message)
     if not extracted:
         return []
 
@@ -154,7 +154,7 @@ async def extract_and_store_memories(
             db.add(memory)
 
         embedding_text = f"{key}: {value}"
-        embedding = _embed_text(embedding_text)
+        embedding = await _embed_text(embedding_text)
         if embedding:
             memory.embedding = embedding
 
@@ -194,7 +194,7 @@ async def retrieve_relevant_memories(
         for m in keyword_results:
             found_ids.add(m.id)
 
-    embedding = _embed_text(message)
+    embedding = await _embed_text(message)
     semantic_results = []
     if embedding and len(embedding) == EXPECTED_DIM:
         try:

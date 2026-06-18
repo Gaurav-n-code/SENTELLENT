@@ -17,7 +17,7 @@ target_metadata = Base.metadata
 def get_url() -> str:
     env_url = os.environ.get("DATABASE_URL")
     if env_url:
-        return env_url
+        return env_url.replace("+asyncpg", "+psycopg2")
     return config.get_main_option("sqlalchemy.url")
 
 

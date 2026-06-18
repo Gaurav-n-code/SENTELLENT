@@ -13,7 +13,7 @@ from app.services.memory_service import extract_and_store_memories, retrieve_rel
 conversation_histories: Dict[str, List[dict]] = {}
 
 
-def _call_gemini(
+async def _call_gemini(
     message: str,
     history: List[dict],
     memory_context: str = "",
@@ -27,12 +27,12 @@ def _call_gemini(
 
     contents.append({"role": "user", "parts": [{"text": augmented_message}]})
 
-    resp = httpx.post(
-        url,
-        params={"key": settings.GEMINI_API_KEY},
-        json={"contents": contents},
-        timeout=60,
-    )
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            url,
+            params={"key": settings.GEMINI_API_KEY},
+            json={"contents": contents},
+        )
     data = resp.json()
     if "candidates" not in data:
         raise Exception(f"Gemini returned no candidates. Full response: {data}")
@@ -45,7 +45,7 @@ def _call_gemini(
     return reply, new_history
 
 
-def _call_openai(message: str, history: List[dict], memory_context: str = "") -> str:
+async def _call_openai(message: str, history: List[dict], memory_context: str = "") -> str:
     from langchain_openai import ChatOpenAI
     from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
@@ -63,7 +63,7 @@ def _call_openai(message: str, history: List[dict], memory_context: str = "") ->
         else:
             messages.append(AIMessage(content=h["parts"][0]["text"]))
     messages.append(HumanMessage(content=message))
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     return response.content
 
 
@@ -112,9 +112,9 @@ async def chat(
     cid = str(conversation.id)
 
     if settings.LLM_PROVIDER == "gemini":
-        reply, _ = _call_gemini(message, langchain_history, memory_context)
+        reply, _ = await _call_gemini(message, langchain_history, memory_context)
     elif settings.LLM_PROVIDER == "openai":
-        reply = _call_openai(message, langchain_history, memory_context)
+        reply = await _call_openai(message, langchain_history, memory_context)
     else:
         raise ValueError(f"Unsupported LLM provider: {settings.LLM_PROVIDER}")
 
