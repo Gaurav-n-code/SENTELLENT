@@ -38,15 +38,10 @@ export default function ChatContent() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [convId, setConvId] = useState<string | undefined>();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => getStoredUser());
   const bottomRef = useRef<HTMLDivElement>(null);
   const loginBtnRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
-
-  useEffect(() => {
-    const stored = getStoredUser();
-    if (stored) setUser(stored);
-  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
